@@ -174,6 +174,18 @@ class InkyBerry:
             return
 
         current = self.plugins[self.current_plugin_index]
+
+        # Write state file so web dashboard knows which plugin is active
+        try:
+            import json as _json
+            with open("/tmp/inkyberry_state.json", "w") as _f:
+                _json.dump({
+                    "current_plugin": current.name,
+                    "current_index": self.current_plugin_index,
+                    "total_plugins": len(self.plugins),
+                }, _f)
+        except Exception:
+            pass
         try:
             img = current.render()
             if img is None:
@@ -351,6 +363,14 @@ class InkyBerry:
                         break
                 else:
                     logger.warning(f"SIGUSR1 switch: plugin '{target}' not found")
+
+            elif cmd.get("action") == "prev":
+                self.current_plugin_index = (self.current_plugin_index - 1) % len(self.plugins)
+                logger.info(f"SIGUSR1 — prev plugin: {self.plugins[self.current_plugin_index].name}")
+
+            elif cmd.get("action") == "next":
+                self.current_plugin_index = (self.current_plugin_index + 1) % len(self.plugins)
+                logger.info(f"SIGUSR1 — next plugin: {self.plugins[self.current_plugin_index].name}")
 
             logger.info("SIGUSR1 — refreshing display")
             t = threading.Thread(target=self._refresh_and_render, daemon=True)

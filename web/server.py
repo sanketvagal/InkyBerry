@@ -197,6 +197,21 @@ def api_set_plugin_settings(name):
 
 # ─── API: Display / Preview ───────────────────────────────────
 
+@app.route("/api/display/current")
+def api_current_plugin():
+    """Return which plugin is currently showing on the display."""
+    state_file = "/tmp/inkyberry_state.json"
+    try:
+        import json as _json
+        with open(state_file) as f:
+            return jsonify(_json.load(f))
+    except Exception:
+        # Fallback: first active plugin
+        cfg = load_config()
+        active = cfg.get("plugins", {}).get("active", [])
+        return jsonify({"current_plugin": active[0] if active else None, "current_index": 0})
+
+
 @app.route("/api/display/preview")
 def api_preview():
     """Serve the latest display screenshot."""
@@ -234,6 +249,27 @@ def api_refresh_display():
             os.kill(int(pid.split()[0]), signal.SIGUSR1)
             return jsonify({"ok": True, "pid": int(pid.split()[0])})
         return jsonify({"error": "InkyBerry process not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/display/button", methods=["POST"])
+def api_press_button():
+    """Simulate a button press (A=prev, B=next, C=refresh)."""
+    data = request.get_json()
+    btn = data.get("button", "").upper()
+    if btn not in ("A", "B", "C", "D"):
+        return jsonify({"error": "Invalid button"}), 400
+    action_map = {"A": "prev", "B": "next", "C": "refresh", "D": "overlay"}
+    try:
+        pid = run_cmd("pgrep -f 'python.*main.py'")
+        if not pid:
+            return jsonify({"error": "InkyBerry process not found"}), 404
+        import json as _json
+        with open("/tmp/inkyberry_cmd.json", "w") as f:
+            _json.dump({"action": action_map[btn], "button": btn}, f)
+        os.kill(int(pid.split()[0]), signal.SIGUSR1)
+        return jsonify({"ok": True, "button": btn})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

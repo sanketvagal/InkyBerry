@@ -120,6 +120,7 @@
 
   .queue { display: flex; flex-direction: column; }
   .qi { display: grid; grid-template-columns: 22px 32px 1fr auto auto; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .qi.no-handle { grid-template-columns: 32px 1fr auto auto; }
   .qi:last-child { border-bottom: 0; }
   .qi.active { background: var(--ink); color: var(--paper); }
   .qi.active .qmeta, .qi.active .handle { color: var(--paper-3); }
@@ -796,12 +797,18 @@ let _pluginData = {};
 let _currentPlugin = null;
 
 async function loadPlugins() {
-  const d = await api('/api/plugins');
+  const [d, state] = await Promise.all([
+    api('/api/plugins'),
+    api('/api/display/current'),
+  ]);
   if (!d) return;
   _pluginData = d;
 
   const active = d.active || [];
   const installed = d.installed || [];
+  const currentPlugin = state && state.current_plugin
+    ? state.current_plugin.toLowerCase().replace(/\s+/g, '_')
+    : (active[0] || null);
 
   // Plugin count
   $('plugin-count').textContent = 'ACTIVE: ' + active.length + ' OF ' + installed.length + ' INSTALLED';
@@ -809,9 +816,14 @@ async function loadPlugins() {
   $('safe-plugins-badge').textContent = active.length >= 10 ? 'AT LIMIT' : 'HEALTHY';
   $('safe-plugins-badge').className = active.length >= 10 ? 'badge warn' : 'badge ok';
 
-  // Rotation mode
+  // Rotation mode — clickable A/B buttons
   const ri = d.rotation_interval || 0;
-  $('rotation-mode').textContent = ri > 0 ? 'AUTO · ' + ri + 'S' : 'MANUAL · A◁  B▷';
+  const modeEl = $('rotation-mode');
+  if (ri > 0) {
+    modeEl.textContent = 'AUTO · ' + ri + 'S';
+  } else {
+    modeEl.innerHTML = '<button class="btn xs" onclick="pressButton(\'A\')" title="Previous plugin">A◁</button> <button class="btn xs" onclick="pressButton(\'B\')" title="Next plugin">B▷</button>';
+  }
 
   // Build plugin list (plugins page)
   const container = $('plugin-list');
@@ -843,33 +855,32 @@ async function loadPlugins() {
     const reordered = newOrder.filter(n => currentActive.includes(n));
     currentActive.forEach(n => { if (!reordered.includes(n)) reordered.push(n); });
     const r = await apiPut('/api/plugins/active', { active: reordered });
-    if (r && r.ok) { toast('Order saved'); _pluginData.active = reordered; }
+    if (r && r.ok) {
+      toast('Order saved — restarting service…');
+      _pluginData.active = reordered;
+      await serviceAction('restart');
+      setTimeout(loadPlugins, 2500);
+    }
   });
 
-  // Home queue (active only)
+  // Home queue (active only) — no drag, just status + trigger
   const hq = $('home-queue');
   hq.innerHTML = '';
-  active.forEach((name, i) => {
+  active.forEach((name) => {
+    const isLive = name === currentPlugin;
     const div = document.createElement('div');
-    div.className = 'qi' + (i === 0 ? ' active' : '');
+    div.className = 'qi no-handle' + (isLive ? ' active' : '');
     div.dataset.plugin = name;
-    div.draggable = true;
     div.innerHTML = `
-      <span class="handle">⋮⋮</span>
       <div class="pico">${pluginIcon(name)}</div>
       <div>
         <div class="qname">${name.toUpperCase().replace(/_/g, ' ')}</div>
-        <div class="qmeta">${i === 0 ? 'On screen' : 'Queued'}</div>
+        <div class="qmeta">${isLive ? 'On screen' : 'Queued'}</div>
       </div>
-      <span class="badge ${i === 0 ? 'on' : ''}">${i === 0 ? 'LIVE' : 'QUEUED'}</span>
+      <span class="badge ${isLive ? 'on' : ''}">${isLive ? 'LIVE' : 'QUEUED'}</span>
       <button class="btn sm" title="Switch to this plugin now" onclick="triggerPlugin('${name}')">▶</button>
     `;
     hq.appendChild(div);
-  });
-
-  addDragHandlers(hq, async newOrder => {
-    const r = await apiPut('/api/plugins/active', { active: newOrder });
-    if (r && r.ok) { toast('Order saved'); _pluginData.active = newOrder; loadPlugins(); }
   });
 }
 
@@ -894,8 +905,19 @@ async function triggerPlugin(name) {
   toast('Switching to ' + name.replace(/_/g, ' ') + '…');
   const r = await apiPost('/api/display/switch', { plugin: name });
   if (r && r.ok) {
-    toast('Switched to ' + name.replace(/_/g, ' ') + ' — e-ink updating…');
-    setTimeout(loadPlugins, 2000);
+    toast('Switched — e-ink updating…');
+    // Reload queue immediately so LIVE badge moves
+    loadPlugins();
+  } else {
+    toast('Failed: ' + ((r && r.error) || 'service not running'));
+  }
+}
+
+async function pressButton(btn) {
+  const r = await apiPost('/api/display/button', { button: btn });
+  if (r && r.ok) {
+    toast('Button ' + btn + ' pressed');
+    setTimeout(loadPlugins, 1500);
   } else {
     toast('Failed: ' + ((r && r.error) || 'service not running'));
   }
