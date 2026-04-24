@@ -4,8 +4,8 @@
 display:
   width: 800
   height: 480
-  rotation: 0 # 0, 90, 180, 270
-  saturation: 0.5 # Color saturation for dithering (0.0 - 1.0)
+  rotation: 0          # 0, 90, 180, 270
+  saturation: 0.5      # Color saturation for dithering (0.0 - 1.0)
 
 # Timezone is always read from the Pi's system clock.
 # To change it: sudo timedatectl set-timezone America/New_York
@@ -15,31 +15,35 @@ plugins:
     - stocks
     - weather
     - photo_frame
-  rotation_interval: 0 # 0 = manual only (use buttons), or seconds between auto-rotation
+  rotation_interval: 0  # 0 = manual only (use buttons), or seconds between auto-rotation
 
 buttons:
   # GPIO pin assignments for Inky Impression 7.3"
-  A: 5 # Previous plugin
-  B: 6 # Next plugin
-  C: 16 # Refresh / plugin-specific action
-  D: 24 # Plugin-specific action / info overlay
+  A: 5     # Previous plugin
+  B: 6     # Next plugin
+  C: 16    # Refresh / plugin-specific action
+  D: 24    # Plugin-specific action / info overlay
 
 stocks:
   # Multiple ticker groups — D button cycles through them
   ticker_groups:
     - [AAPL, MSFT, AMZN, GOOG]
     - [META, NFLX, INTC, AMD]
-  refresh_interval: 900 # seconds (15 min)
+  refresh_interval: 900  # seconds (15 min)
 
 weather:
   # Location auto-detected from IP. To override, uncomment and set:
   # latitude: 40.7128
   # longitude: -74.0060
   # location_name: "New York, NY"
-  units: metric # imperial or metric (D button toggles)
+  units: metric          # imperial or metric (D button toggles)
   refresh_interval: 1800 # seconds (30 min)
 
 photo_frame:
   directory: "~/inkyberry/photos"
-  interval: 300 # seconds between auto-advance
+  interval: 300          # seconds between auto-advance
   shuffle: true
+
+schedule:
+  enabled: false
+  rules: []

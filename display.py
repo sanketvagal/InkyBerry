@@ -82,18 +82,47 @@ class Display:
 
     def show(self, image):
         """Push an image to the Inky display."""
+        # Always save a preview for the web dashboard
+        self._save_preview(image)
+
         if self.inky is None:
-            # Save preview in headless mode
-            preview_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "preview.png"
-            )
-            image.save(preview_path)
-            logger.info(f"Preview saved to {preview_path}")
+            logger.info(f"Preview saved to {self._preview_path}")
             return
 
         self.inky.set_image(image, saturation=self.saturation)
         self.inky.show()
         logger.info("Display updated")
+
+    def _save_preview(self, image):
+        """Save an RGB preview PNG for the web dashboard."""
+        preview_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "preview.png"
+        )
+        self._preview_path = preview_path
+        try:
+            if image.mode == "P":
+                palette_rgb = {
+                    0: (0, 0, 0),        # BLACK
+                    1: (255, 255, 255),   # WHITE
+                    2: (0, 128, 0),       # GREEN
+                    3: (0, 0, 255),       # BLUE
+                    4: (255, 0, 0),       # RED
+                    5: (255, 255, 0),     # YELLOW
+                    6: (255, 165, 0),     # ORANGE
+                    7: (200, 200, 200),   # CLEAN
+                }
+                rgb_img = Image.new("RGB", image.size, (255, 255, 255))
+                pixels = image.load()
+                rgb_pixels = rgb_img.load()
+                for py in range(image.height):
+                    for px in range(image.width):
+                        idx = pixels[px, py]
+                        rgb_pixels[px, py] = palette_rgb.get(idx, (128, 128, 128))
+                rgb_img.save(preview_path)
+            else:
+                image.save(preview_path)
+        except Exception as e:
+            logger.warning(f"Failed to save preview: {e}")
 
     def clear(self):
         """Clear the display."""

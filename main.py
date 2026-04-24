@@ -329,8 +329,15 @@ class InkyBerry:
             logger.info("Shutting down...")
             self._running = False
 
+        # SIGUSR1 = web dashboard requests a refresh
+        def on_refresh_signal(sig, frame):
+            logger.info("SIGUSR1 received — web-triggered refresh")
+            t = threading.Thread(target=self._refresh_and_render, daemon=True)
+            t.start()
+
         signal.signal(signal.SIGTERM, shutdown)
         signal.signal(signal.SIGINT, shutdown)
+        signal.signal(signal.SIGUSR1, on_refresh_signal)
 
         # Initial render
         logger.info(f"Active plugin: {self.plugins[self.current_plugin_index].name}")

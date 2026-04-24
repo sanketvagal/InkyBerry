@@ -5,3 +5,4 @@ Pillow>=10.0.0
 gpiozero>=2.0
 pytz>=2023.3
 pillow-heif>=0.10.0
+flask>=3.0.0
