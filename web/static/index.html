@@ -106,7 +106,7 @@
   .eink-preview img { width: 100%; height: 100%; object-fit: contain; }
   .eink-preview .placeholder { color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
 
-  .last-render { font-size: 11px; color: var(--muted); margin-top: 10px; padding: 6px 10px; border: 1px dashed var(--line-2); background: var(--paper-3); display: inline-flex; gap: 10px; flex-wrap: wrap; }
+  .last-render { font-size: 11px; color: var(--muted); padding: 6px 10px; border: 1px dashed var(--line-2); background: var(--paper-3); display: inline-flex; gap: 10px; flex-wrap: wrap; }
   .last-render b { color: var(--ink); }
 
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -125,6 +125,17 @@
   .qi.active { background: var(--ink); color: var(--paper); }
   .qi.active .qmeta, .qi.active .handle { color: var(--paper-3); }
   .qi.active .pico { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .eink-btn {
+    border: 2px solid var(--ink); background: var(--paper); padding: 14px 10px;
+    text-align: center; cursor: pointer; transition: background 0.1s;
+  }
+  .eink-btn:hover { background: var(--ink); color: var(--paper); }
+  .eink-btn:hover .eink-btn-action { color: var(--paper-3); }
+  .eink-btn:active { background: var(--ink-2); }
+  .eink-btn-label { font-size: 22px; font-weight: 700; letter-spacing: 0.1em; line-height: 1; }
+  .eink-btn-action { font-size: 10.5px; color: var(--muted); margin-top: 6px; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; }
+
   .qi.drag-over { outline: 2px dashed var(--ink); background: var(--paper-3); }
   .handle { color: var(--muted); user-select: none; font-size: 14px; cursor: grab; }
   .pico { width: 32px; height: 32px; border: 1px solid var(--ink); background: var(--paper); display: grid; place-items: center; font-weight: 700; }
@@ -277,13 +288,6 @@
       <li><a href="#" data-page="system">◩ System<span class="k">Y</span></a></li>
       <li><a href="#" data-page="logs">≡ Logs<span class="k">L</span></a></li>
     </ul>
-    <div class="nav-foot">
-      <div style="font-weight:700;color:var(--ink);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px">PULSE</div>
-      <div class="r"><span>cpu</span><b id="pulse-cpu">—</b></div>
-      <div class="r"><span>ram</span><b id="pulse-ram">—</b></div>
-      <div class="r"><span>temp</span><b id="pulse-temp">—</b></div>
-      <div class="r"><span>disk</span><b id="pulse-disk">—</b></div>
-    </div>
   </nav>
 
   <main>
@@ -310,24 +314,35 @@
                 <img id="preview-img" src="/api/display/preview" alt="Display preview" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
                 <div class="placeholder" style="display:none">NO PREVIEW AVAILABLE · PRESS REFRESH</div>
               </div>
-              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                <button class="btn primary" onclick="refreshDisplay()">⟳ Force refresh</button>
+              <div style="display:flex;gap:8px;margin-top:12px;align-items:stretch;flex-wrap:wrap">
                 <button class="btn" onclick="downloadPreview()">↓ Download PNG</button>
+                <div class="last-render" id="render-info" style="align-items:center">LAST RENDER <b>—</b></div>
               </div>
-              <div class="last-render" id="render-info">LAST RENDER <b>—</b></div>
             </div>
           </div>
         </div>
 
         <div>
           <div class="panel">
-            <header>DEVICE PULSE<span class="r">LIVE · 5S</span></header>
+            <header>BUTTONS<span class="r" id="btn-panel-plugin">—</span></header>
             <div class="body">
-              <div class="stats" id="home-stats">
-                <div class="stat"><label>CPU</label><b id="h-cpu">—</b><div class="s" id="h-cpu-sub">—</div><div class="bar"><i id="h-cpu-bar" style="width:0%"></i></div></div>
-                <div class="stat"><label>MEMORY</label><b id="h-mem">—</b><div class="s" id="h-mem-sub">—</div><div class="bar"><i id="h-mem-bar" style="width:0%"></i></div></div>
-                <div class="stat"><label>CPU TEMP</label><b id="h-temp">—</b><div class="s">throttle at 80°</div><div class="bar"><i id="h-temp-bar" style="width:0%"></i></div></div>
-                <div class="stat"><label>STORAGE</label><b id="h-disk">—</b><div class="s" id="h-disk-sub">—</div><div class="bar"><i id="h-disk-bar" style="width:0%"></i></div></div>
+              <div class="btn-grid" id="btn-grid">
+                <div class="eink-btn" onclick="pressButton('A')">
+                  <div class="eink-btn-label">A</div>
+                  <div class="eink-btn-action" id="btn-action-a">Prev plugin</div>
+                </div>
+                <div class="eink-btn" onclick="pressButton('B')">
+                  <div class="eink-btn-label">B</div>
+                  <div class="eink-btn-action" id="btn-action-b">Next plugin</div>
+                </div>
+                <div class="eink-btn" onclick="pressButton('C')">
+                  <div class="eink-btn-label">C</div>
+                  <div class="eink-btn-action" id="btn-action-c">Refresh</div>
+                </div>
+                <div class="eink-btn" onclick="pressButton('D')">
+                  <div class="eink-btn-label">D</div>
+                  <div class="eink-btn-action" id="btn-action-d">Info overlay</div>
+                </div>
               </div>
             </div>
           </div>
@@ -677,20 +692,14 @@ function addDragHandlers(container, onReorder) {
   });
 }
 
-// ─── System stats polling ───────────────────────────────────
+// ─── System stats polling (system page only) ────────────────
 let _stats = {};
 async function pollStats() {
   const s = await api('/api/system/stats');
   if (!s) return;
   _stats = s;
 
-  // Nav pulse
-  $('pulse-cpu').textContent = s.cpu_percent + '%';
-  $('pulse-ram').textContent = s.mem_used_mb + '/' + s.mem_total_mb;
-  $('pulse-temp').textContent = s.cpu_temp + '°C';
-  $('pulse-disk').textContent = s.disk_used_gb + '/' + s.disk_total_gb + 'G';
-
-  // Top bar
+  // Top bar service status (always update)
   const dot = document.querySelector('#svc-status .dot');
   if (s.service_status === 'active') {
     dot.className = 'dot ok';
@@ -700,17 +709,6 @@ async function pollStats() {
     $('svc-status').innerHTML = '<span class="dot err"></span>SERVICE ' + (s.service_status || 'UNKNOWN').toUpperCase();
   }
   $('host-pill').textContent = (s.hostname || 'inkyberry') + ' · ' + (s.ip || '—');
-
-  // Home stats
-  $('h-cpu').innerHTML = s.cpu_percent + '<span class="u">%</span>';
-  $('h-cpu-sub').textContent = 'load ' + (s.load_1m || 0).toFixed(2) + ' · 4 cores';
-  $('h-cpu-bar').style.width = s.cpu_percent + '%';
-  $('h-mem').innerHTML = s.mem_used_mb + '<span class="u">/' + s.mem_total_mb + ' MB</span>';
-  $('h-mem-bar').style.width = s.mem_percent + '%';
-  $('h-temp').innerHTML = s.cpu_temp + '<span class="u">°C</span>';
-  $('h-temp-bar').style.width = Math.min(100, s.cpu_temp / 80 * 100).toFixed(0) + '%';
-  $('h-disk').innerHTML = s.disk_used_gb + '<span class="u">/' + s.disk_total_gb + ' GB</span>';
-  $('h-disk-bar').style.width = s.disk_percent + '%';
 
   // System page stats
   $('s-cpu').innerHTML = s.cpu_percent + '<span class="u">%</span>';
@@ -746,7 +744,20 @@ async function pollStats() {
   // Schedule TZ
   $('sched-tz').textContent = s.timezone || '—';
 }
-setInterval(pollStats, 5000);
+
+// Poll stats only when system page is active
+let _statsInterval = null;
+function startStatsPoll() {
+  if (_statsInterval) return;
+  pollStats();
+  _statsInterval = setInterval(pollStats, 5000);
+}
+function stopStatsPoll() {
+  clearInterval(_statsInterval);
+  _statsInterval = null;
+}
+
+// Always do one call on load for topbar service status
 pollStats();
 
 // ─── Preview ────────────────────────────────────────────────
@@ -763,7 +774,7 @@ async function pollPreview() {
   const m = await api('/api/display/preview/meta');
   if (!m || !m.exists) return;
 
-  const ago = Math.round((Date.now() / 1000) - m.modified);
+  const ago = Math.max(0, Math.round((Date.now() / 1000) - m.modified));
   const time = new Date(m.modified * 1000).toLocaleTimeString();
   $('render-info').innerHTML = 'LAST RENDER <b>' + time + '</b> · <b>' + ago + 's</b> ago';
 
@@ -809,6 +820,8 @@ async function loadPlugins() {
   const currentPlugin = state && state.current_plugin
     ? state.current_plugin.toLowerCase().replace(/\s+/g, '_')
     : (active[0] || null);
+
+  updateButtonLabels(currentPlugin);
 
   // Plugin count
   $('plugin-count').textContent = 'ACTIVE: ' + active.length + ' OF ' + installed.length + ' INSTALLED';
@@ -1335,6 +1348,25 @@ function formatLogLine(line) {
 }
 
 // ─── Service control ────────────────────────────────────────
+// ─── Button labels by plugin ────────────────────────────────
+const BUTTON_ACTIONS = {
+  stocks:      { A: 'Prev plugin', B: 'Next plugin', C: 'Refresh data',    D: 'Next ticker group' },
+  weather:     { A: 'Prev plugin', B: 'Next plugin', C: 'Refresh data',    D: 'Toggle °C / °F' },
+  photo_frame: { A: 'Prev plugin', B: 'Next plugin', C: 'Previous photo',  D: 'Next photo' },
+  _default:    { A: 'Prev plugin', B: 'Next plugin', C: 'Refresh',         D: 'Info overlay' },
+};
+
+function updateButtonLabels(currentPlugin) {
+  const actions = BUTTON_ACTIONS[currentPlugin] || BUTTON_ACTIONS._default;
+  const pluginLabel = currentPlugin ? currentPlugin.toUpperCase().replace(/_/g, ' ') : '—';
+  const el = $('btn-panel-plugin');
+  if (el) el.textContent = pluginLabel;
+  ['a','b','c','d'].forEach(b => {
+    const el = $('btn-action-' + b);
+    if (el) el.textContent = actions[b.toUpperCase()] || '—';
+  });
+}
+
 async function serviceAction(action) {
   toast(action + 'ing service…');
   const r = await apiPost('/api/system/service', { action });
@@ -1358,6 +1390,10 @@ document.addEventListener('click', e => {
   if (el) el.classList.add('active');
   document.querySelectorAll('.nav a[data-page="' + page + '"]').forEach(a => a.classList.add('active'));
   window.scrollTo({ top: 0 });
+
+  // Start/stop stats polling based on page
+  if (page === 'system') startStatsPoll();
+  else stopStatsPoll();
 
   // Lazy load page data
   if (page === 'photos') loadPhotos();
