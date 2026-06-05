@@ -174,6 +174,18 @@ class InkyBerry:
             return
 
         current = self.plugins[self.current_plugin_index]
+
+        # Write state file so web dashboard knows which plugin is active
+        try:
+            import json as _json
+            with open("/tmp/inkyberry_state.json", "w") as _f:
+                _json.dump({
+                    "current_plugin": current.name,
+                    "current_index": self.current_plugin_index,
+                    "total_plugins": len(self.plugins),
+                }, _f)
+        except Exception:
+            pass
         try:
             img = current.render()
             if img is None:
@@ -329,8 +341,44 @@ class InkyBerry:
             logger.info("Shutting down...")
             self._running = False
 
+        # SIGUSR1 = web dashboard requests a refresh or plugin switch
+        def on_refresh_signal(sig, frame):
+            import json as _json
+            cmd_file = "/tmp/inkyberry_cmd.json"
+            cmd = {}
+            try:
+                if os.path.exists(cmd_file):
+                    with open(cmd_file) as f:
+                        cmd = _json.load(f)
+                    os.remove(cmd_file)
+            except Exception:
+                pass
+
+            if cmd.get("action") == "switch" and "plugin" in cmd:
+                target = cmd["plugin"]
+                for i, p in enumerate(self.plugins):
+                    if p.name.lower().replace(" ", "_") == target.lower().replace(" ", "_"):
+                        self.current_plugin_index = i
+                        logger.info(f"SIGUSR1 — switching to plugin: {p.name}")
+                        break
+                else:
+                    logger.warning(f"SIGUSR1 switch: plugin '{target}' not found")
+
+            elif cmd.get("action") == "prev":
+                self.current_plugin_index = (self.current_plugin_index - 1) % len(self.plugins)
+                logger.info(f"SIGUSR1 — prev plugin: {self.plugins[self.current_plugin_index].name}")
+
+            elif cmd.get("action") == "next":
+                self.current_plugin_index = (self.current_plugin_index + 1) % len(self.plugins)
+                logger.info(f"SIGUSR1 — next plugin: {self.plugins[self.current_plugin_index].name}")
+
+            logger.info("SIGUSR1 — refreshing display")
+            t = threading.Thread(target=self._refresh_and_render, daemon=True)
+            t.start()
+
         signal.signal(signal.SIGTERM, shutdown)
         signal.signal(signal.SIGINT, shutdown)
+        signal.signal(signal.SIGUSR1, on_refresh_signal)
 
         # Initial render
         logger.info(f"Active plugin: {self.plugins[self.current_plugin_index].name}")

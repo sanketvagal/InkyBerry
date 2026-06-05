@@ -63,7 +63,7 @@ source "$VENV_PATH/bin/activate"
 # Install Python dependencies
 echo "[5/6] Installing Python packages..."
 pip install --upgrade pip
-pip install yfinance requests pyyaml pillow RPi.GPIO gpiozero gpiodevice
+pip install yfinance requests pyyaml pillow RPi.GPIO gpiozero gpiodevice flask
 
 # Download a nice readable font
 echo "[6/6] Downloading fonts..."
@@ -101,6 +101,44 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable inkyberry.service
 
+# Create web dashboard systemd service
+echo "Creating web dashboard service..."
+sudo tee /etc/systemd/system/inkyberry-web.service > /dev/null << EOF
+[Unit]
+Description=InkyBerry Web Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$HOME/inkyberry
+Environment="PATH=$VENV_PATH/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=$VENV_PATH/bin/python web/server.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable inkyberry-web.service
+
+# Allow the web dashboard to control the inkyberry service and reboot
+echo "Configuring sudoers for service control..."
+sudo tee /etc/sudoers.d/inkyberry > /dev/null << EOF
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start inkyberry.service
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop inkyberry.service
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart inkyberry.service
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start inkyberry-web.service
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop inkyberry-web.service
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart inkyberry-web.service
+$USER ALL=(ALL) NOPASSWD: /usr/sbin/reboot
+$USER ALL=(ALL) NOPASSWD: /usr/sbin/shutdown
+EOF
+sudo chmod 0440 /etc/sudoers.d/inkyberry
+
 echo ""
 echo "=============================="
 echo "  Setup Complete!"
@@ -112,12 +150,18 @@ echo ""
 echo "To start InkyBerry:"
 echo "  sudo systemctl start inkyberry"
 echo ""
+echo "To start the Web Dashboard:"
+echo "  sudo systemctl start inkyberry-web"
+echo "  Then open http://inkyberry.local:5000 in your browser"
+echo ""
 echo "To view logs:"
 echo "  journalctl -u inkyberry -f"
 echo ""
 echo "To run manually:"
 echo "  source $VENV_PATH/bin/activate"
 echo "  cd ~/inkyberry && python main.py"
+echo "  # In another terminal:"
+echo "  cd ~/inkyberry && python web/server.py"
 echo ""
 if [ "${NEEDS_REBOOT}" = "1" ]; then
     echo "⚠️  REBOOT REQUIRED"

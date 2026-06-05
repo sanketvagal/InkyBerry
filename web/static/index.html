@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InkyBerry // Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3efe6;
+    --paper-2: #eae5d8;
+    --paper-3: #dcd6c5;
+    --ink: #18150f;
+    --ink-2: #3a362c;
+    --muted: #807a6a;
+    --line: #c9c3b1;
+    --line-2: #b8b19d;
+    --green: #2f6b3d;
+    --red: #9e3428;
+    --warn: #a56b10;
+    --blue: #284e7a;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 12.5px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  body { background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 4px 4px; min-height: 100vh; }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+
+  .topbar {
+    border-bottom: 1px solid var(--ink); background: var(--paper-2);
+    padding: 8px 18px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .mark {
+    width: 22px; height: 22px; border: 1.5px solid var(--ink); position: relative;
+    background: repeating-linear-gradient(45deg, var(--ink) 0 1.5px, transparent 1.5px 4px);
+  }
+  .mark::after { content: ""; position: absolute; inset: 4px; background: var(--paper); border: 1px solid var(--ink); }
+  .brand b { letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; font-size: 14px; }
+  .brand small { color: var(--muted); letter-spacing: 0.08em; margin-left: 4px; }
+  .topright { display: flex; gap: 14px; align-items: center; font-size: 11.5px; }
+  .dot { width: 8px; height: 8px; display: inline-block; box-shadow: 0 0 0 1px var(--ink); margin-right: 6px; }
+  .dot.ok { background: var(--green); }
+  .dot.err { background: var(--red); }
+  .dot.warn { background: var(--warn); }
+  .pill { border: 1px solid var(--ink); padding: 2px 8px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; background: var(--paper); }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 16px 18px 80px; }
+  .grid { display: grid; grid-template-columns: 210px 1fr; gap: 14px; align-items: start; }
+
+  .nav { border: 1px solid var(--ink); background: var(--paper-2); position: sticky; top: 56px; }
+  .nav h5 { margin: 0; padding: 7px 12px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--paper-3); }
+  .nav ul { list-style: none; margin: 0; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .nav ul:last-of-type { border-bottom: 0; }
+  .nav a {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 6px 12px; color: var(--ink-2); text-decoration: none; font-size: 12.5px;
+    border-left: 3px solid transparent;
+  }
+  .nav a:hover { background: var(--paper-3); color: var(--ink); }
+  .nav a.active { background: var(--ink); color: var(--paper); border-left-color: var(--ink); }
+  .nav a .k { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+  .nav a.active .k { color: var(--paper-3); }
+  .nav-foot { padding: 10px 12px; border-top: 1px solid var(--line); background: var(--paper-3); font-size: 11px; color: var(--muted); }
+  .nav-foot .r { display: flex; justify-content: space-between; padding: 2px 0; }
+  .nav-foot b { color: var(--ink); font-weight: 600; }
+
+  .panel { border: 1px solid var(--ink); background: var(--paper-2); margin-bottom: 14px; }
+  .panel > header {
+    padding: 7px 12px; background: var(--ink); color: var(--paper);
+    font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel > header .r { font-weight: 400; opacity: 0.75; letter-spacing: 0.08em; }
+  .panel > .body { padding: 14px; }
+  .panel > .body.flush { padding: 0; }
+
+  .phead { padding: 10px 14px 14px; border-bottom: 1px dashed var(--line-2); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; }
+  .phead h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; font-weight: 700; }
+  .phead h1::before { content: "▸ "; color: var(--ink-2); }
+  .phead p { margin: 3px 0 0; color: var(--muted); font-size: 12px; max-width: 640px; }
+  .crumbs { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .crumbs b { color: var(--ink); }
+  .pactions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    border: 1px solid var(--ink); background: var(--paper); color: var(--ink);
+    padding: 5px 11px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  .btn.primary:hover { background: var(--ink-2); }
+  .btn.danger:hover { background: var(--red); border-color: var(--red); color: var(--paper); }
+  .btn.sm { padding: 3px 8px; font-size: 11px; }
+  .btn.xs { padding: 2px 6px; font-size: 10.5px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .home { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; }
+
+  .eink-preview { width: 100%; aspect-ratio: 800/480; border: 1px solid var(--ink); background: #f7f2e6; box-shadow: inset 0 0 0 6px var(--paper-2), inset 0 0 0 7px var(--ink); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .eink-preview img { width: 100%; height: 100%; object-fit: contain; }
+  .eink-preview .placeholder { color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
+
+  .last-render { font-size: 11px; color: var(--muted); padding: 6px 10px; border: 1px dashed var(--line-2); background: var(--paper-3); display: inline-flex; gap: 10px; flex-wrap: wrap; }
+  .last-render b { color: var(--ink); }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { border: 1px solid var(--line); background: var(--paper); padding: 10px 12px; }
+  .stat label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: block; }
+  .stat b { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; display: block; margin-top: 2px; }
+  .stat .u { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+  .stat .s { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
+  .bar { height: 6px; margin-top: 8px; background: var(--paper-3); border: 1px solid var(--line); position: relative; }
+  .bar > i { position: absolute; top: 0; left: 0; bottom: 0; background: repeating-linear-gradient(45deg, var(--ink) 0 2px, #555 2px 4px); }
+
+  .queue { display: flex; flex-direction: column; }
+  .qi { display: grid; grid-template-columns: 22px 32px 1fr auto auto; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .qi.no-handle { grid-template-columns: 32px 1fr auto auto; }
+  .qi:last-child { border-bottom: 0; }
+  .qi.active { background: var(--ink); color: var(--paper); }
+  .qi.active .qmeta, .qi.active .handle { color: var(--paper-3); }
+  .qi.active .pico { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .eink-btn {
+    border: 2px solid var(--ink); background: var(--paper); padding: 14px 10px;
+    text-align: center; cursor: pointer; transition: background 0.1s;
+  }
+  .eink-btn:hover { background: var(--ink); color: var(--paper); }
+  .eink-btn:hover .eink-btn-action { color: var(--paper-3); }
+  .eink-btn:active { background: var(--ink-2); }
+  .eink-btn-label { font-size: 22px; font-weight: 700; letter-spacing: 0.1em; line-height: 1; }
+  .eink-btn-action { font-size: 10.5px; color: var(--muted); margin-top: 6px; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; }
+
+  .qi.drag-over { outline: 2px dashed var(--ink); background: var(--paper-3); }
+  .handle { color: var(--muted); user-select: none; font-size: 14px; cursor: grab; }
+  .pico { width: 32px; height: 32px; border: 1px solid var(--ink); background: var(--paper); display: grid; place-items: center; font-weight: 700; }
+  .qname { font-weight: 700; letter-spacing: 0.02em; font-size: 13px; }
+  .qmeta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tog { width: 32px; height: 16px; border: 1px solid var(--ink); background: var(--paper); position: relative; cursor: pointer; }
+  .tog::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; background: var(--ink); }
+  .tog.off::after { left: auto; right: 1px; background: var(--muted); }
+  .qi.active .tog { background: var(--paper); }
+  .badge { padding: 2px 7px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--ink); background: var(--paper); }
+  .badge.on { background: var(--ink); color: var(--paper); }
+  .badge.ok { border-color: var(--green); color: var(--green); }
+  .badge.warn { border-color: var(--warn); color: var(--warn); }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .field label .lo { color: var(--line-2); margin-left: 6px; text-transform: none; letter-spacing: 0.04em; }
+  .field input[type="text"], .field input[type="number"], .field select, .field textarea {
+    width: 100%; padding: 6px 10px; border: 1px solid var(--ink); background: var(--paper);
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink); border-radius: 0;
+  }
+  .field input:focus, .field select:focus { outline: none; background: #fff; box-shadow: inset 0 0 0 1px var(--ink); }
+  .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--ink); background: var(--paper-2); padding: 2px 7px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+  .chip button { border: 0; background: transparent; color: var(--muted); padding: 0; font-size: 13px; line-height: 1; cursor: pointer; }
+  .chip button:hover { color: var(--red); }
+  .chip.add { border-style: dashed; color: var(--muted); font-weight: 500; cursor: pointer; }
+  .chip.add:hover { color: var(--ink); border-color: var(--ink); }
+
+  .tg { border: 1px dashed var(--line-2); padding: 10px 12px; background: var(--paper); margin-bottom: 8px; }
+  .tg header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .tg h6 { margin: 0; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .logs { background: #14110b; color: #c9c3b1; padding: 12px 16px; font-family: var(--mono); font-size: 11.5px; line-height: 1.6; max-height: 520px; overflow: auto; }
+  .logs .t { color: #807a6a; }
+  .logs .i { color: #6fa58a; }
+  .logs .w { color: #d5a84e; }
+  .logs .e { color: #e07261; }
+  .logs .n { color: #8ab0c8; }
+
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th, .tbl td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+  .tbl th { background: var(--paper-3); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl input, .tbl select { padding: 3px 7px; border: 1px solid var(--ink); background: var(--paper); font-family: var(--mono); font-size: 11.5px; }
+
+  .sched { border: 1px solid var(--ink); }
+  .sched-head, .sched-row { display: grid; grid-template-columns: 72px repeat(24, 1fr); }
+  .sched-head { background: var(--paper-3); border-bottom: 1px solid var(--ink); }
+  .sched-head .h { text-align: center; padding: 5px 0; font-size: 10px; color: var(--muted); font-weight: 600; border-right: 1px dashed var(--line); }
+  .sched-head .h:first-child { text-align: left; padding-left: 10px; color: var(--ink); }
+  .sched-head .h:last-child { border-right: 0; }
+  .sched-row { border-bottom: 1px solid var(--line); background: var(--paper-2); }
+  .sched-row:last-child { border-bottom: 0; }
+  .sched-row .d { padding: 10px; font-weight: 700; font-size: 11.5px; border-right: 1px solid var(--ink); }
+  .sched-row .c { min-height: 38px; border-right: 1px dashed var(--line); position: relative; }
+  .sched-row .c:last-child { border-right: 0; }
+  .sb { position: absolute; inset: 4px 1px; padding: 2px 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+  .sb-w { background: #c8d9e8; color: var(--blue); }
+  .sb-s { background: #e0d5b8; color: #6a4e20; }
+  .sb-p { background: #e8d0d4; color: var(--red); }
+
+  .pal { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--ink); height: 60px; }
+  .pal div { border-right: 1px solid var(--ink); }
+  .pal div:last-child { border-right: 0; }
+  .pal-lab { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 4px; font-size: 10px; color: var(--muted); text-align: center; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .pi { padding: 20px; background: linear-gradient(140deg, #2a2625 0%, #171513 100%); position: relative; box-shadow: 0 6px 20px rgba(28,26,25,0.14); }
+  .pi-screen { background: #f7f2e6; width: 100%; height: 100%; padding: 6px; display: grid; grid-template-columns: 1fr 48px; gap: 8px; border: 1px solid var(--ink); }
+  .pi-screen-content { background: repeating-linear-gradient(0deg, transparent 0 6px, var(--line) 6px 7px); opacity: 0.8; }
+  .pi-btns { display: flex; flex-direction: column; justify-content: space-around; gap: 4px; }
+  .pi-btn { width: 40px; height: 40px; border: 2px solid var(--ink); background: var(--paper-2); display: grid; place-items: center; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .pi-btn:hover { background: var(--ink); color: var(--paper); }
+  .pi-btn.sel { background: var(--ink); color: var(--paper); box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink); }
+
+  .safety { border-top: 1px solid var(--line); }
+  .safety > .r { display: grid; grid-template-columns: 230px 1fr 130px auto; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); align-items: center; }
+  .safety > .r:last-child { border-bottom: 0; }
+  .safety .lb { font-weight: 700; font-size: 12.5px; }
+  .safety .de { font-size: 11.5px; color: var(--muted); }
+  .safety .va { font-family: var(--mono); font-size: 11.5px; }
+
+  .sep { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; margin: 20px 0 10px; }
+  .sep::before, .sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; height: 22px; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: var(--paper-3); border: 1px solid var(--ink); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--ink); margin-top: -7px; border: 1px solid var(--ink); }
+
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .ph { aspect-ratio: 4/3; border: 1px solid var(--ink); position: relative; overflow: hidden; cursor: pointer; background: var(--paper-3); }
+  .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .ph .nm { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(24,21,15,0.75); color: var(--paper); padding: 2px 6px; font-size: 10px; opacity: 0; transition: opacity 0.15s; }
+  .ph:hover .nm { opacity: 1; }
+  .ph .del { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: var(--red); color: white; border: 0; font-size: 14px; display: none; cursor: pointer; line-height: 1; }
+  .ph:hover .del { display: block; }
+  .ph.drop { border-style: dashed; display: grid; place-items: center; color: var(--muted); font-size: 11px; text-align: center; padding: 8px; }
+  .ph.drop:hover { background: var(--paper-2); color: var(--ink); }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--ink); color: var(--paper); padding: 8px 14px; font-family: var(--mono); font-size: 12px; z-index: 100; border: 1px solid var(--ink); display: none; }
+  .toast.show { display: block; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  @media (max-width: 980px) {
+    .grid { grid-template-columns: 1fr; }
+    .nav { position: static; }
+    .home, .two-col, .three-col { grid-template-columns: 1fr; }
+    .sched-head, .sched-row { grid-template-columns: 54px repeat(24, 1fr); }
+    .safety > .r { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="mark"></div>
+    <b>InkyBerry</b><small>// dashboard</small>
+  </div>
+  <div class="topright">
+    <span id="svc-status"><span class="dot ok"></span>LOADING…</span>
+    <span class="pill" id="host-pill">inkyberry.local</span>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <nav class="nav">
+    <h5>Device</h5>
+    <ul>
+      <li><a href="#" data-page="home" class="active">◐ Home<span class="k">H</span></a></li>
+      <li><a href="#" data-page="plugins">❏ Plugins<span class="k">P</span></a></li>
+      <li><a href="#" data-page="photos">▣ Photos<span class="k">F</span></a></li>
+      <li><a href="#" data-page="schedule">◷ Schedule<span class="k">S</span></a></li>
+    </ul>
+    <h5>Hardware</h5>
+    <ul>
+      <li><a href="#" data-page="display">□ Display<span class="k">D</span></a></li>
+      <li><a href="#" data-page="buttons">● Buttons<span class="k">B</span></a></li>
+    </ul>
+    <h5>Server</h5>
+    <ul>
+      <li><a href="#" data-page="system">◩ System<span class="k">Y</span></a></li>
+      <li><a href="#" data-page="logs">≡ Logs<span class="k">L</span></a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+    <!-- ═══════ HOME ═══════ -->
+    <section class="page active" id="page-home">
+      <div class="phead">
+        <div>
+          <div class="crumbs">DEVICE / <b>HOME</b></div>
+          <h1>Home</h1>
+          <p id="home-subtitle">Live snapshot of what's on the panel.</p>
+        </div>
+        <div class="pactions">
+          <button class="btn primary" onclick="refreshDisplay()">⟳ Refresh display</button>
+        </div>
+      </div>
+
+      <div class="home">
+        <div>
+          <div class="panel">
+            <header>LIVE DISPLAY<span class="r" id="preview-meta">800×480 · 7-COLOR</span></header>
+            <div class="body">
+              <div class="eink-preview" id="preview-frame">
+                <img id="preview-img" src="/api/display/preview" alt="Display preview" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+                <div class="placeholder" style="display:none">NO PREVIEW AVAILABLE · PRESS REFRESH</div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:12px;align-items:stretch;flex-wrap:wrap">
+                <button class="btn" onclick="downloadPreview()">↓ Download PNG</button>
+                <div class="last-render" id="render-info" style="align-items:center">LAST RENDER <b>—</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <header>BUTTONS<span class="r" id="btn-panel-plugin">—</span></header>
+            <div class="body">
+              <div class="btn-grid" id="btn-grid">
+                <div class="eink-btn" onclick="pressButton('A')">
+                  <div class="eink-btn-label">A</div>
+                  <div class="eink-btn-action" id="btn-action-a">Prev plugin</div>
+                </div>
+                <div class="eink-btn" onclick="pressButton('B')">
+                  <div class="eink-btn-label">B</div>
+                  <div class="eink-btn-action" id="btn-action-b">Next plugin</div>
+                </div>
+                <div class="eink-btn" onclick="pressButton('C')">
+                  <div class="eink-btn-label">C</div>
+                  <div class="eink-btn-action" id="btn-action-c">Refresh</div>
+                </div>
+                <div class="eink-btn" onclick="pressButton('D')">
+                  <div class="eink-btn-label">D</div>
+                  <div class="eink-btn-action" id="btn-action-d">Info overlay</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <header>ROTATION QUEUE<span class="r" id="rotation-mode">MANUAL</span></header>
+            <div class="body flush">
+              <div class="queue" id="home-queue"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <header>RECENT EVENTS<span class="r">journalctl -u inkyberry</span></header>
+        <div class="logs" id="home-logs" style="max-height:170px"></div>
+      </div>
+    </section>
+
+    <!-- ═══════ PLUGINS ═══════ -->
+    <section class="page" id="page-plugins">
+      <div class="phead">
+        <div>
+          <div class="crumbs">DEVICE / <b>PLUGINS</b></div>
+          <h1>Plugins</h1>
+          <p>Enable/disable and reorder plugins. Click configure to edit per-plugin settings.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <header>INSTALLED PLUGINS<span class="r" id="plugin-count">—</span></header>
+        <div class="body flush">
+          <div class="queue" id="plugin-list"></div>
+        </div>
+      </div>
+
+      <!-- Plugin detail (shown when configure is clicked) -->
+      <div id="plugin-detail" style="display:none">
+        <div class="phead" style="border-bottom:0;padding-bottom:0">
+          <div>
+            <div class="crumbs">PLUGINS / <b id="pd-name">—</b></div>
+            <h1 id="pd-title">Plugin Settings</h1>
+          </div>
+          <div class="pactions">
+            <button class="btn" onclick="hidePluginDetail()">← Back</button>
+            <button class="btn primary" onclick="savePluginSettings()">Save & reload</button>
+          </div>
+        </div>
+        <div class="panel">
+          <header>SETTINGS<span class="r">CONFIG.YAML</span></header>
+          <div class="body" id="pd-settings"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ PHOTOS ═══════ -->
+    <section class="page" id="page-photos">
+      <div class="phead">
+        <div>
+          <div class="crumbs">DEVICE / <b>PHOTOS</b></div>
+          <h1>Photos</h1>
+          <p id="photos-subtitle">Loading…</p>
+        </div>
+        <div class="pactions">
+          <button class="btn" onclick="loadPhotos()">Rescan</button>
+          <button class="btn primary" onclick="document.getElementById('photo-upload').click()">↑ Upload</button>
+          <input type="file" id="photo-upload" multiple accept="image/*" style="display:none" onchange="uploadPhotos(this.files)">
+        </div>
+      </div>
+      <div class="panel">
+        <header>ALL PHOTOS<span class="r" id="photos-meta">—</span></header>
+        <div class="body">
+          <div class="pgrid" id="photo-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ SCHEDULE ═══════ -->
+    <section class="page" id="page-schedule">
+      <div class="phead">
+        <div><div class="crumbs">DEVICE / <b>SCHEDULE</b></div><h1>Schedule</h1>
+          <p>Time-of-day rules override the default rotation. First match wins.</p></div>
+        <div class="pactions">
+          <button class="btn primary" onclick="addScheduleRule()">+ Add rule</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <header>WEEK AT A GLANCE<span class="r" id="sched-tz">—</span></header>
+        <div class="body flush">
+          <div class="sched">
+            <div class="sched-head">
+              <div class="h">DAY</div>
+              <div class="h">0</div><div class="h">1</div><div class="h">2</div><div class="h">3</div>
+              <div class="h">4</div><div class="h">5</div><div class="h">6</div><div class="h">7</div>
+              <div class="h">8</div><div class="h">9</div><div class="h">10</div><div class="h">11</div>
+              <div class="h">12</div><div class="h">13</div><div class="h">14</div><div class="h">15</div>
+              <div class="h">16</div><div class="h">17</div><div class="h">18</div><div class="h">19</div>
+              <div class="h">20</div><div class="h">21</div><div class="h">22</div><div class="h">23</div>
+            </div>
+            <div id="sched-week"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <header>RULES<span class="r">EVALUATED TOP-DOWN</span></header>
+        <div class="body flush">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>DAYS</th><th>WINDOW</th><th>PLUGIN</th><th>NOTE</th><th></th></tr></thead>
+            <tbody id="sched-rules"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ DISPLAY ═══════ -->
+    <section class="page" id="page-display">
+      <div class="phead">
+        <div><div class="crumbs">HARDWARE / <b>DISPLAY</b></div><h1>Display</h1>
+          <p>Inky Impression 7.3" · 800 × 480 · 7-color e-ink.</p></div>
+        <div class="pactions">
+          <button class="btn primary" onclick="saveDisplaySettings()">Apply</button>
+        </div>
+      </div>
+
+      <div class="home">
+        <div class="panel">
+          <header>SETTINGS</header>
+          <div class="body">
+            <div class="two-col">
+              <div class="field"><label>Rotation</label>
+                <select id="disp-rotation"><option value="0">0° (landscape)</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>
+              <div class="field"><label>Saturation <span class="lo" id="disp-sat-val">0.5</span></label>
+                <input type="range" id="disp-saturation" min="0" max="1" step="0.05" value="0.5" oninput="document.getElementById('disp-sat-val').textContent=this.value">
+                <div class="hint">Higher = more vivid colors. 0.5 is the sweet spot.</div></div>
+            </div>
+            <div class="field"><label>Auto-rotation interval <span class="lo">seconds · 0 = manual</span></label>
+              <input type="number" id="disp-rot-interval" value="0" min="0">
+              <div class="hint">Min 60s for automatic. 0 = manual button rotation only.</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <header>7-COLOR PALETTE<span class="r">DITHERING TARGET</span></header>
+          <div class="body">
+            <div class="pal">
+              <div style="background:#14110b"></div>
+              <div style="background:#f7f2e6"></div>
+              <div style="background:#2f6b3d"></div>
+              <div style="background:#284e7a"></div>
+              <div style="background:#9e3428"></div>
+              <div style="background:#d4b018"></div>
+              <div style="background:#c87a1c"></div>
+            </div>
+            <div class="pal-lab"><span>BLACK</span><span>WHITE</span><span>GREEN</span><span>BLUE</span><span>RED</span><span>YELLOW</span><span>ORANGE</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ BUTTONS ═══════ -->
+    <section class="page" id="page-buttons">
+      <div class="phead">
+        <div><div class="crumbs">HARDWARE / <b>BUTTONS</b></div><h1>Buttons</h1>
+          <p>4 physical GPIO buttons on the Inky Impression. Long-press D for system overlay.</p></div>
+        <div class="pactions">
+          <button class="btn primary" onclick="saveButtonSettings()">Save</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start">
+        <div class="panel">
+          <header>INKY IMPRESSION</header>
+          <div class="body">
+            <div class="pi">
+              <div class="pi-screen">
+                <div class="pi-screen-content"></div>
+                <div class="pi-btns">
+                  <div class="pi-btn">A</div><div class="pi-btn">B</div><div class="pi-btn">C</div><div class="pi-btn">D</div>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--muted);letter-spacing:0.14em" id="gpio-pins">GPIO 5 · 6 · 16 · 24</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <header>GPIO MAPPING</header>
+          <div class="body flush">
+            <table class="tbl">
+              <thead><tr><th>BTN</th><th>GPIO PIN</th><th>DEFAULT ACTION</th></tr></thead>
+              <tbody>
+                <tr><td><b>A</b></td><td><input type="number" id="btn-a-pin" value="5" style="width:60px"></td><td>Previous plugin</td></tr>
+                <tr><td><b>B</b></td><td><input type="number" id="btn-b-pin" value="6" style="width:60px"></td><td>Next plugin</td></tr>
+                <tr><td><b>C</b></td><td><input type="number" id="btn-c-pin" value="16" style="width:60px"></td><td>Refresh / plugin action</td></tr>
+                <tr><td><b>D</b></td><td><input type="number" id="btn-d-pin" value="24" style="width:60px"></td><td>Plugin action / overlay</td></tr>
+                <tr><td><b>D·HOLD</b></td><td>—</td><td>System info overlay</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ SYSTEM ═══════ -->
+    <section class="page" id="page-system">
+      <div class="phead">
+        <div><div class="crumbs">SERVER / <b>SYSTEM</b></div><h1>System</h1>
+          <p id="sys-subtitle">Raspberry Pi Zero 2 W</p></div>
+        <div class="pactions">
+          <button class="btn" onclick="serviceAction('restart')">Restart service</button>
+          <button class="btn" onclick="if(confirm('Reboot the Pi?'))apiPost('/api/system/reboot')">Reboot Pi</button>
+          <button class="btn danger" onclick="if(confirm('Shutdown the Pi? You will lose access.'))apiPost('/api/system/shutdown')">Shutdown</button>
+        </div>
+      </div>
+
+      <div class="home">
+        <div class="panel">
+          <header>HOST</header>
+          <div class="body flush">
+            <table class="tbl" id="sys-host-table">
+              <tbody>
+                <tr><th>HOSTNAME</th><td id="sys-hostname">—</td></tr>
+                <tr><th>IP</th><td id="sys-ip">—</td></tr>
+                <tr><th>UPTIME</th><td id="sys-uptime">—</td></tr>
+                <tr><th>TIMEZONE</th><td id="sys-tz">—</td></tr>
+                <tr><th>PYTHON</th><td id="sys-python">—</td></tr>
+                <tr><th>SERVICE</th><td id="sys-service">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <header>RESOURCES<span class="r">LIVE · 5S</span></header>
+          <div class="body">
+            <div class="stats" id="sys-stats">
+              <div class="stat"><label>CPU</label><b id="s-cpu">—</b><div class="s" id="s-cpu-sub">—</div><div class="bar"><i id="s-cpu-bar" style="width:0%"></i></div></div>
+              <div class="stat"><label>MEMORY</label><b id="s-mem">—</b><div class="s" id="s-mem-sub">—</div><div class="bar"><i id="s-mem-bar" style="width:0%"></i></div></div>
+              <div class="stat"><label>TEMP</label><b id="s-temp">—</b><div class="s">throttle at 80°</div><div class="bar"><i id="s-temp-bar" style="width:0%"></i></div></div>
+              <div class="stat"><label>DISK</label><b id="s-disk">—</b><div class="s" id="s-disk-sub">—</div><div class="bar"><i id="s-disk-bar" style="width:0%"></i></div></div>
+              <div class="stat"><label>SWAP</label><b id="s-swap">—</b><div class="bar"><i id="s-swap-bar" style="width:0%"></i></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <header>SAFETY RAILS<span class="r">Pi Zero 2 W · 512MB RAM</span></header>
+        <div class="body" style="padding:0">
+          <div class="safety" id="safety-rails">
+            <div class="r"><div><div class="lb">MIN PLUGIN REFRESH</div><div class="de">Shorter intervals disallowed</div></div><div></div><div class="va">≥ 300s</div><span class="badge ok">ENFORCED</span></div>
+            <div class="r"><div><div class="lb">MIN ROTATION INTERVAL</div><div class="de">E-ink refresh + render ~50s</div></div><div></div><div class="va">≥ 60s</div><span class="badge ok">ENFORCED</span></div>
+            <div class="r"><div><div class="lb">MAX ENABLED PLUGINS</div><div class="de">Hard-caps at 10</div></div><div></div><div class="va" id="safe-plugins">—</div><span class="badge ok" id="safe-plugins-badge">—</span></div>
+            <div class="r"><div><div class="lb">THERMAL THROTTLE</div><div class="de">Pauses refresh above 75°C</div></div><div></div><div class="va" id="safe-temp">—</div><span class="badge ok" id="safe-temp-badge">ARMED</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ LOGS ═══════ -->
+    <section class="page" id="page-logs">
+      <div class="phead">
+        <div><div class="crumbs">SERVER / <b>LOGS</b></div><h1>Logs</h1>
+          <p>Live tail of systemd journal · journalctl -u inkyberry -f</p></div>
+        <div class="pactions">
+          <select id="log-level" onchange="reconnectLogs()"><option value="">ALL LEVELS</option><option value="info">INFO+</option><option value="warn">WARN+</option><option value="error">ERROR ONLY</option></select>
+          <button class="btn primary" onclick="reconnectLogs()">▶ LIVE</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="logs" id="log-output" style="max-height:560px"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Shared helpers ─────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function toast(msg, ms) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), ms || 3000);
+}
+async function api(url, opts) {
+  try {
+    const r = await fetch(url, opts);
+    return await r.json();
+  } catch (e) {
+    console.error('API error:', url, e);
+    return null;
+  }
+}
+async function apiPost(url, body) {
+  return api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : '{}' });
+}
+async function apiPut(url, body) {
+  return api(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+// Plugin icons
+const ICONS = { stocks: '$', weather: '☂', photo_frame: '▣' };
+function pluginIcon(name) { return ICONS[name] || '◉'; }
+
+// ─── Drag-to-reorder ────────────────────────────────────────
+let _dragSrc = null;
+
+function addDragHandlers(container, onReorder) {
+  container.addEventListener('dragstart', e => {
+    const qi = e.target.closest('.qi');
+    if (!qi) return;
+    _dragSrc = qi;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => qi.style.opacity = '0.4', 0);
+  });
+  container.addEventListener('dragend', e => {
+    const qi = e.target.closest('.qi');
+    if (qi) qi.style.opacity = '';
+    container.querySelectorAll('.qi').forEach(el => el.classList.remove('drag-over'));
+  });
+  container.addEventListener('dragover', e => {
+    e.preventDefault();
+    const qi = e.target.closest('.qi');
+    if (!qi || qi === _dragSrc) return;
+    container.querySelectorAll('.qi').forEach(el => el.classList.remove('drag-over'));
+    qi.classList.add('drag-over');
+    // Reorder in DOM
+    const items = [...container.querySelectorAll('.qi')];
+    const srcIdx = items.indexOf(_dragSrc);
+    const tgtIdx = items.indexOf(qi);
+    if (srcIdx < tgtIdx) container.insertBefore(_dragSrc, qi.nextSibling);
+    else container.insertBefore(_dragSrc, qi);
+  });
+  container.addEventListener('drop', e => {
+    e.preventDefault();
+    container.querySelectorAll('.qi').forEach(el => el.classList.remove('drag-over'));
+    const newOrder = [...container.querySelectorAll('.qi[data-plugin]')].map(el => el.dataset.plugin);
+    onReorder(newOrder);
+  });
+}
+
+// ─── System stats polling (system page only) ────────────────
+let _stats = {};
+async function pollStats() {
+  const s = await api('/api/system/stats');
+  if (!s) return;
+  _stats = s;
+
+  // Top bar service status (always update)
+  const dot = document.querySelector('#svc-status .dot');
+  if (s.service_status === 'active') {
+    dot.className = 'dot ok';
+    $('svc-status').innerHTML = '<span class="dot ok"></span>SERVICE RUNNING · ' + s.uptime_str;
+  } else {
+    dot.className = 'dot err';
+    $('svc-status').innerHTML = '<span class="dot err"></span>SERVICE ' + (s.service_status || 'UNKNOWN').toUpperCase();
+  }
+  $('host-pill').textContent = (s.hostname || 'inkyberry') + ' · ' + (s.ip || '—');
+
+  // System page stats
+  $('s-cpu').innerHTML = s.cpu_percent + '<span class="u">%</span>';
+  $('s-cpu-sub').textContent = 'load ' + [s.load_1m, s.load_5m, s.load_15m].map(v => (v||0).toFixed(2)).join(' / ');
+  $('s-cpu-bar').style.width = s.cpu_percent + '%';
+  $('s-mem').innerHTML = s.mem_used_mb + '<span class="u">/' + s.mem_total_mb + ' MB</span>';
+  $('s-mem-bar').style.width = s.mem_percent + '%';
+  $('s-temp').innerHTML = s.cpu_temp + '<span class="u">°C</span>';
+  $('s-temp-bar').style.width = Math.min(100, s.cpu_temp / 80 * 100).toFixed(0) + '%';
+  $('s-disk').innerHTML = s.disk_used_gb + '<span class="u">/' + s.disk_total_gb + ' GB</span>';
+  $('s-disk-bar').style.width = s.disk_percent + '%';
+  $('s-swap').innerHTML = (s.swap_used_mb || 0) + '<span class="u">MB</span>';
+  if (s.swap_total_mb) $('s-swap-bar').style.width = (s.swap_used_mb / s.swap_total_mb * 100).toFixed(0) + '%';
+
+  // System host table
+  $('sys-hostname').textContent = (s.hostname || '—') + '.local';
+  $('sys-ip').textContent = s.ip || '—';
+  $('sys-uptime').textContent = s.uptime_str || '—';
+  $('sys-tz').textContent = s.timezone || '—';
+  $('sys-python').textContent = s.python_version || '—';
+  $('sys-service').innerHTML = (s.service_status === 'active' ? '<span class="dot ok"></span>Running' : '<span class="dot err"></span>' + (s.service_status || 'unknown'));
+
+  // Safety rails
+  $('safe-temp').textContent = s.cpu_temp + '°C';
+  if (s.cpu_temp >= 75) {
+    $('safe-temp-badge').textContent = 'THROTTLING';
+    $('safe-temp-badge').className = 'badge warn';
+  } else {
+    $('safe-temp-badge').textContent = 'ARMED';
+    $('safe-temp-badge').className = 'badge ok';
+  }
+
+  // Schedule TZ
+  $('sched-tz').textContent = s.timezone || '—';
+}
+
+// Poll stats only when system page is active
+let _statsInterval = null;
+function startStatsPoll() {
+  if (_statsInterval) return;
+  pollStats();
+  _statsInterval = setInterval(pollStats, 5000);
+}
+function stopStatsPoll() {
+  clearInterval(_statsInterval);
+  _statsInterval = null;
+}
+
+// Always do one call on load for topbar service status
+pollStats();
+
+// ─── Preview ────────────────────────────────────────────────
+let _lastPreviewModified = null;
+
+function refreshPreviewImage() {
+  const img = $('preview-img');
+  img.src = '/api/display/preview?t=' + Date.now();
+  img.style.display = '';
+  img.nextElementSibling.style.display = 'none';
+}
+
+async function pollPreview() {
+  const m = await api('/api/display/preview/meta');
+  if (!m || !m.exists) return;
+
+  const ago = Math.max(0, Math.round((Date.now() / 1000) - m.modified));
+  const time = new Date(m.modified * 1000).toLocaleTimeString();
+  $('render-info').innerHTML = 'LAST RENDER <b>' + time + '</b> · <b>' + ago + 's</b> ago';
+
+  // Reload image only if the file on disk has changed
+  if (_lastPreviewModified !== m.modified) {
+    _lastPreviewModified = m.modified;
+    refreshPreviewImage();
+  }
+}
+
+async function refreshDisplay() {
+  toast('Sending refresh signal…');
+  const r = await apiPost('/api/display/refresh');
+  if (r && r.ok) {
+    toast('Refresh triggered — e-ink updating (~45s)…');
+  } else {
+    toast('Could not refresh: ' + ((r && r.error) || 'service not running'));
+  }
+}
+function downloadPreview() {
+  const a = document.createElement('a');
+  a.href = '/api/display/preview';
+  a.download = 'inkyberry-screenshot.png';
+  a.click();
+}
+setInterval(pollPreview, 5000);
+pollPreview();
+
+// ─── Plugins ────────────────────────────────────────────────
+let _pluginData = {};
+let _currentPlugin = null;
+
+async function loadPlugins() {
+  const [d, state] = await Promise.all([
+    api('/api/plugins'),
+    api('/api/display/current'),
+  ]);
+  if (!d) return;
+  _pluginData = d;
+
+  const active = d.active || [];
+  const installed = d.installed || [];
+  const currentPlugin = state && state.current_plugin
+    ? state.current_plugin.toLowerCase().replace(/\s+/g, '_')
+    : (active[0] || null);
+
+  updateButtonLabels(currentPlugin);
+
+  // Plugin count
+  $('plugin-count').textContent = 'ACTIVE: ' + active.length + ' OF ' + installed.length + ' INSTALLED';
+  $('safe-plugins').textContent = active.length + ' / 10';
+  $('safe-plugins-badge').textContent = active.length >= 10 ? 'AT LIMIT' : 'HEALTHY';
+  $('safe-plugins-badge').className = active.length >= 10 ? 'badge warn' : 'badge ok';
+
+  // Rotation mode — clickable A/B buttons
+  const ri = d.rotation_interval || 0;
+  const modeEl = $('rotation-mode');
+  if (ri > 0) {
+    modeEl.textContent = 'AUTO · ' + ri + 'S';
+  } else {
+    modeEl.innerHTML = '<button class="btn xs" onclick="pressButton(\'A\')" title="Previous plugin">A◁</button> <button class="btn xs" onclick="pressButton(\'B\')" title="Next plugin">B▷</button>';
+  }
+
+  // Build plugin list (plugins page)
+  const container = $('plugin-list');
+  container.innerHTML = '';
+  const ordered = [...active];
+  installed.forEach(p => { if (!active.includes(p.name)) ordered.push(p.name); });
+
+  ordered.forEach((name) => {
+    const isActive = active.includes(name);
+    const div = document.createElement('div');
+    div.className = 'qi';
+    div.dataset.plugin = name;
+    div.draggable = isActive;
+    div.innerHTML = `
+      <span class="handle" style="${isActive ? '' : 'opacity:0.3;cursor:default'}">⋮⋮</span>
+      <div class="pico">${pluginIcon(name)}</div>
+      <div>
+        <div class="qname">${name.toUpperCase().replace(/_/g, ' ')}</div>
+        <div class="qmeta">${isActive ? 'In rotation' : 'Disabled'}</div>
+      </div>
+      <div class="tog ${isActive ? '' : 'off'}" data-plugin="${name}"></div>
+      <button class="btn sm" onclick="showPluginDetail('${name}')">CONFIGURE →</button>
+    `;
+    container.appendChild(div);
+  });
+
+  addDragHandlers(container, async newOrder => {
+    const currentActive = _pluginData.active || [];
+    const reordered = newOrder.filter(n => currentActive.includes(n));
+    currentActive.forEach(n => { if (!reordered.includes(n)) reordered.push(n); });
+    const r = await apiPut('/api/plugins/active', { active: reordered });
+    if (r && r.ok) {
+      toast('Order saved — restarting service…');
+      _pluginData.active = reordered;
+      await serviceAction('restart');
+      setTimeout(loadPlugins, 2500);
+    }
+  });
+
+  // Home queue (active only) — no drag, just status + trigger
+  const hq = $('home-queue');
+  hq.innerHTML = '';
+  active.forEach((name) => {
+    const isLive = name === currentPlugin;
+    const div = document.createElement('div');
+    div.className = 'qi no-handle' + (isLive ? ' active' : '');
+    div.dataset.plugin = name;
+    div.innerHTML = `
+      <div class="pico">${pluginIcon(name)}</div>
+      <div>
+        <div class="qname">${name.toUpperCase().replace(/_/g, ' ')}</div>
+        <div class="qmeta">${isLive ? 'On screen' : 'Queued'}</div>
+      </div>
+      <span class="badge ${isLive ? 'on' : ''}">${isLive ? 'LIVE' : 'QUEUED'}</span>
+      <button class="btn sm" title="Switch to this plugin now" onclick="triggerPlugin('${name}')">▶</button>
+    `;
+    hq.appendChild(div);
+  });
+}
+
+// Toggle plugin active/inactive
+document.addEventListener('click', e => {
+  const tog = e.target.closest('.tog[data-plugin]');
+  if (!tog) return;
+  const name = tog.dataset.plugin;
+  const cfg = _pluginData;
+  let active = [...(cfg.active || [])];
+  if (active.includes(name)) {
+    active = active.filter(n => n !== name);
+  } else {
+    active.push(name);
+  }
+  apiPut('/api/plugins/active', { active }).then(r => {
+    if (r && r.ok) { toast(name + ' toggled'); loadPlugins(); }
+  });
+});
+
+async function triggerPlugin(name) {
+  toast('Switching to ' + name.replace(/_/g, ' ') + '…');
+  const r = await apiPost('/api/display/switch', { plugin: name });
+  if (r && r.ok) {
+    toast('Switched — e-ink updating…');
+    // Reload queue immediately so LIVE badge moves
+    loadPlugins();
+  } else {
+    toast('Failed: ' + ((r && r.error) || 'service not running'));
+  }
+}
+
+async function pressButton(btn) {
+  const r = await apiPost('/api/display/button', { button: btn });
+  if (r && r.ok) {
+    toast('Button ' + btn + ' pressed');
+    setTimeout(loadPlugins, 1500);
+  } else {
+    toast('Failed: ' + ((r && r.error) || 'service not running'));
+  }
+}
+
+async function showPluginDetail(name) {
+  _currentPlugin = name;
+  $('pd-name').textContent = name.toUpperCase();
+  $('pd-title').textContent = name.replace('_', ' ') + ' Settings';
+  $('plugin-detail').style.display = 'block';
+
+  const d = await api('/api/plugins/' + name + '/settings');
+  if (!d) return;
+
+  const container = $('pd-settings');
+  container.innerHTML = '';
+
+  const settings = d.settings || {};
+  // Render each setting as a form field
+  for (const [key, val] of Object.entries(settings)) {
+    const field = document.createElement('div');
+    field.className = 'field';
+    if (Array.isArray(val)) {
+      // Array — show as chips or nested groups
+      if (val.length > 0 && Array.isArray(val[0])) {
+        // Array of arrays (ticker_groups)
+        field.innerHTML = `<label>${key}</label>`;
+        val.forEach((group, gi) => {
+          const tg = document.createElement('div');
+          tg.className = 'tg';
+          tg.innerHTML = `<header><h6>Group ${gi + 1}</h6></header><div class="chips" data-key="${key}" data-group="${gi}">` +
+            group.map(t => `<span class="chip">${t}<button onclick="removeChip(this,'${key}',${gi},'${t}')">×</button></span>`).join('') +
+            `<span class="chip add" onclick="addChip('${key}',${gi})">+ ADD</span></div>`;
+          field.appendChild(tg);
+        });
+      } else {
+        // Simple array
+        field.innerHTML = `<label>${key}</label><div class="chips" data-key="${key}">` +
+          val.map(t => `<span class="chip">${t}<button onclick="removeSimpleChip(this,'${key}','${t}')">×</button></span>`).join('') +
+          `<span class="chip add" onclick="addSimpleChip('${key}')">+ ADD</span></div>`;
+      }
+    } else if (typeof val === 'boolean') {
+      field.innerHTML = `<label>${key}</label><div class="tog ${val ? '' : 'off'}" data-setting="${key}" style="margin-top:4px"></div>`;
+    } else if (typeof val === 'number') {
+      field.innerHTML = `<label>${key} <span class="lo">${key.includes('interval') ? 'seconds' : ''}</span></label><input type="number" data-setting="${key}" value="${val}">`;
+    } else {
+      field.innerHTML = `<label>${key}</label><input type="text" data-setting="${key}" value="${val || ''}">`;
+    }
+    container.appendChild(field);
+  }
+}
+
+function hidePluginDetail() {
+  $('plugin-detail').style.display = 'none';
+  _currentPlugin = null;
+}
+
+async function savePluginSettings() {
+  if (!_currentPlugin) return;
+  // Gather current settings from the form
+  const d = await api('/api/plugins/' + _currentPlugin + '/settings');
+  const settings = { ...(d ? d.settings : {}) };
+
+  // Update from form inputs
+  $('pd-settings').querySelectorAll('[data-setting]').forEach(el => {
+    const key = el.dataset.setting;
+    if (el.classList.contains('tog')) {
+      settings[key] = !el.classList.contains('off');
+    } else if (el.type === 'number') {
+      settings[key] = parseFloat(el.value);
+    } else {
+      settings[key] = el.value;
+    }
+  });
+
+  const r = await apiPut('/api/plugins/' + _currentPlugin + '/settings', { settings });
+  if (r && r.ok) {
+    toast('Settings saved for ' + _currentPlugin);
+    serviceAction('restart');
+  }
+}
+
+function removeChip(btn, key, gi, val) {
+  // Remove ticker from group
+  const d = api('/api/plugins/' + _currentPlugin + '/settings').then(d => {
+    const s = d.settings;
+    if (s[key] && s[key][gi]) {
+      s[key][gi] = s[key][gi].filter(v => v !== val);
+      apiPut('/api/plugins/' + _currentPlugin + '/settings', { settings: s }).then(() => showPluginDetail(_currentPlugin));
+    }
+  });
+}
+function addChip(key, gi) {
+  const val = prompt('Add ticker symbol:');
+  if (!val) return;
+  api('/api/plugins/' + _currentPlugin + '/settings').then(d => {
+    const s = d.settings;
+    if (s[key] && s[key][gi]) {
+      s[key][gi].push(val.toUpperCase().trim());
+      apiPut('/api/plugins/' + _currentPlugin + '/settings', { settings: s }).then(() => showPluginDetail(_currentPlugin));
+    }
+  });
+}
+function removeSimpleChip(btn, key, val) {
+  api('/api/plugins/' + _currentPlugin + '/settings').then(d => {
+    const s = d.settings;
+    if (s[key]) {
+      s[key] = s[key].filter(v => v !== val);
+      apiPut('/api/plugins/' + _currentPlugin + '/settings', { settings: s }).then(() => showPluginDetail(_currentPlugin));
+    }
+  });
+}
+function addSimpleChip(key) {
+  const val = prompt('Add value:');
+  if (!val) return;
+  api('/api/plugins/' + _currentPlugin + '/settings').then(d => {
+    const s = d.settings;
+    if (!s[key]) s[key] = [];
+    s[key].push(val.trim());
+    apiPut('/api/plugins/' + _currentPlugin + '/settings', { settings: s }).then(() => showPluginDetail(_currentPlugin));
+  });
+}
+
+loadPlugins();
+
+// ─── Photos ─────────────────────────────────────────────────
+async function loadPhotos() {
+  const d = await api('/api/photos');
+  if (!d) return;
+
+  const sizeMB = (d.total_size / (1024 * 1024)).toFixed(1);
+  $('photos-subtitle').textContent = d.total + ' files · ' + sizeMB + ' MB · ' + d.directory;
+  $('photos-meta').textContent = (d.total || 0) + ' FILES';
+
+  const grid = $('photo-grid');
+  grid.innerHTML = '';
+
+  // Upload drop zone
+  const drop = document.createElement('div');
+  drop.className = 'ph drop';
+  drop.innerHTML = '<div>DROP FILES<br><small style="opacity:0.7">or click</small></div>';
+  drop.onclick = () => $('photo-upload').click();
+  drop.ondragover = e => { e.preventDefault(); drop.style.background = 'var(--paper-2)'; };
+  drop.ondragleave = () => { drop.style.background = ''; };
+  drop.ondrop = e => { e.preventDefault(); drop.style.background = ''; uploadPhotos(e.dataTransfer.files); };
+  grid.appendChild(drop);
+
+  (d.photos || []).forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'ph';
+    div.innerHTML = `<img src="/api/photos/thumb/${encodeURIComponent(p.name)}" alt="${p.name}" loading="lazy"><div class="nm">${p.name}</div><button class="del" onclick="deletePhoto('${p.name}',event)">×</button>`;
+    grid.appendChild(div);
+  });
+}
+
+async function uploadPhotos(files) {
+  if (!files || !files.length) return;
+  const fd = new FormData();
+  for (const f of files) fd.append('photos', f);
+  toast('Uploading ' + files.length + ' file(s)…');
+  try {
+    const r = await fetch('/api/photos/upload', { method: 'POST', body: fd });
+    const d = await r.json();
+    toast('Uploaded ' + (d.count || 0) + ' photo(s)');
+    loadPhotos();
+  } catch (e) {
+    toast('Upload failed');
+  }
+}
+
+async function deletePhoto(name, e) {
+  e.stopPropagation();
+  if (!confirm('Delete ' + name + '?')) return;
+  await fetch('/api/photos/' + encodeURIComponent(name), { method: 'DELETE' });
+  toast(name + ' deleted');
+  loadPhotos();
+}
+
+// ─── Display settings ───────────────────────────────────────
+async function loadDisplaySettings() {
+  const cfg = await api('/api/config');
+  if (!cfg) return;
+  const d = cfg.display || {};
+  $('disp-rotation').value = d.rotation || 0;
+  $('disp-saturation').value = d.saturation || 0.5;
+  $('disp-sat-val').textContent = d.saturation || 0.5;
+  $('disp-rot-interval').value = (cfg.plugins || {}).rotation_interval || 0;
+}
+
+async function saveDisplaySettings() {
+  const cfg = await api('/api/config');
+  if (!cfg) return;
+  cfg.display = cfg.display || {};
+  cfg.display.rotation = parseInt($('disp-rotation').value);
+  cfg.display.saturation = parseFloat($('disp-saturation').value);
+  cfg.plugins = cfg.plugins || {};
+  const ri = parseInt($('disp-rot-interval').value);
+  if (ri > 0 && ri < 60) {
+    toast('Minimum rotation interval is 60s');
+    return;
+  }
+  cfg.plugins.rotation_interval = ri;
+  const r = await apiPut('/api/config', cfg);
+  if (r && r.ok) {
+    toast('Display settings saved');
+    serviceAction('restart');
+  }
+}
+loadDisplaySettings();
+
+// ─── Buttons ────────────────────────────────────────────────
+async function loadButtonSettings() {
+  const d = await api('/api/buttons');
+  if (!d) return;
+  $('btn-a-pin').value = d.A || 5;
+  $('btn-b-pin').value = d.B || 6;
+  $('btn-c-pin').value = d.C || 16;
+  $('btn-d-pin').value = d.D || 24;
+  $('gpio-pins').textContent = 'GPIO ' + (d.A||5) + ' · ' + (d.B||6) + ' · ' + (d.C||16) + ' · ' + (d.D||24);
+}
+
+async function saveButtonSettings() {
+  const btns = {
+    A: parseInt($('btn-a-pin').value),
+    B: parseInt($('btn-b-pin').value),
+    C: parseInt($('btn-c-pin').value),
+    D: parseInt($('btn-d-pin').value),
+  };
+  const r = await apiPut('/api/buttons', btns);
+  if (r && r.ok) {
+    toast('Button mapping saved');
+    serviceAction('restart');
+  }
+}
+loadButtonSettings();
+
+// ─── Schedule ───────────────────────────────────────────────
+async function loadSchedule() {
+  const sched = await api('/api/schedule');
+  if (!sched) return;
+
+  const rules = sched.rules || [];
+  const tbody = $('sched-rules');
+  tbody.innerHTML = '';
+
+  rules.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${r.days || '—'}</td><td>${r.start || '—'} – ${r.end || '—'}</td><td>${pluginIcon(r.plugin || '')} ${(r.plugin || '—').replace('_',' ')}</td><td>${r.note || ''}</td><td><button class="btn xs" onclick="editScheduleRule(${i})">EDIT</button> <button class="btn xs danger" onclick="deleteScheduleRule(${i})">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Fallthrough row
+  const ftr = document.createElement('tr');
+  ftr.innerHTML = '<td>—</td><td>any</td><td>otherwise</td><td style="color:var(--muted)">Default rotation</td><td>Fallthrough</td><td></td>';
+  tbody.appendChild(ftr);
+
+  // Build week visualization
+  renderScheduleWeek(rules);
+}
+
+function renderScheduleWeek(rules) {
+  const mount = $('sched-week');
+  mount.innerHTML = '';
+  const days = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const clsMap = { stocks: 'sb-s', weather: 'sb-w', photo_frame: 'sb-p' };
+
+  days.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'sched-row';
+    row.innerHTML = '<div class="d">' + d + '</div>' + Array.from({length:24}, (_,h) => '<div class="c" data-h="'+h+'"></div>').join('');
+    mount.appendChild(row);
+
+    // Apply rules
+    rules.forEach(r => {
+      if (!r.days) return;
+      const dayList = r.days.toLowerCase().split(/[,\-–]/);
+      const dayMap = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
+      // Check if this day matches
+      let match = dayList.some(dd => dayMap[dd.trim()] === i);
+      if (!match && r.days.toLowerCase().includes('-')) {
+        // Range like Mon-Fri
+        const parts = r.days.toLowerCase().split(/[-–]/);
+        if (parts.length === 2) {
+          const s = dayMap[parts[0].trim()];
+          const e = dayMap[parts[1].trim()];
+          if (s !== undefined && e !== undefined) match = i >= s && i <= e;
+        }
+      }
+      if (!match) return;
+
+      const startH = parseInt((r.start || '0').split(':')[0]);
+      const endH = parseInt((r.end || '0').split(':')[0]);
+      const cell = row.querySelector('[data-h="'+startH+'"]');
+      if (!cell) return;
+      const block = document.createElement('div');
+      block.className = 'sb ' + (clsMap[r.plugin] || 'sb-s');
+      block.style.width = 'calc(' + ((endH - startH) * 100) + '% - 2px)';
+      block.textContent = pluginIcon(r.plugin || '') + ' ' + (r.plugin || '').replace('_', ' ');
+      cell.appendChild(block);
+    });
+  });
+}
+
+async function addScheduleRule() {
+  const plugin = prompt('Plugin name (stocks, weather, photo_frame):');
+  if (!plugin) return;
+  const days = prompt('Days (e.g. Mon-Fri, Sat,Sun):');
+  const start = prompt('Start time (e.g. 06:00):');
+  const end = prompt('End time (e.g. 09:00):');
+  const note = prompt('Note (optional):') || '';
+
+  const sched = await api('/api/schedule') || { enabled: true, rules: [] };
+  if (!sched.rules) sched.rules = [];
+  sched.rules.push({ plugin, days, start, end, note });
+  sched.enabled = true;
+  await apiPut('/api/schedule', sched);
+  toast('Rule added');
+  loadSchedule();
+}
+
+async function deleteScheduleRule(idx) {
+  if (!confirm('Delete rule #' + (idx+1) + '?')) return;
+  const sched = await api('/api/schedule') || { rules: [] };
+  sched.rules.splice(idx, 1);
+  await apiPut('/api/schedule', sched);
+  toast('Rule deleted');
+  loadSchedule();
+}
+
+async function editScheduleRule(idx) {
+  const sched = await api('/api/schedule') || { rules: [] };
+  const r = sched.rules[idx];
+  if (!r) return;
+  r.plugin = prompt('Plugin:', r.plugin) || r.plugin;
+  r.days = prompt('Days:', r.days) || r.days;
+  r.start = prompt('Start:', r.start) || r.start;
+  r.end = prompt('End:', r.end) || r.end;
+  r.note = prompt('Note:', r.note) || r.note;
+  await apiPut('/api/schedule', sched);
+  toast('Rule updated');
+  loadSchedule();
+}
+
+loadSchedule();
+
+// ─── Logs SSE ───────────────────────────────────────────────
+let _logSource = null;
+
+function reconnectLogs() {
+  if (_logSource) { _logSource.close(); _logSource = null; }
+  const level = $('log-level').value;
+  const url = '/api/logs/stream' + (level ? '?level=' + level : '');
+  $('log-output').innerHTML = '<div style="color:#6fa58a">[connecting to journal…]</div>';
+  _logSource = new EventSource(url);
+  _logSource.onmessage = e => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.heartbeat) return;
+      if (d.line) {
+        const div = document.createElement('div');
+        div.innerHTML = formatLogLine(d.line);
+        const out = $('log-output');
+        out.appendChild(div);
+        // Keep max 500 lines
+        while (out.children.length > 500) out.removeChild(out.firstChild);
+        out.scrollTop = out.scrollHeight;
+      }
+    } catch (err) {}
+  };
+  _logSource.onerror = () => {
+    // Try to fetch recent logs as fallback
+    loadRecentLogs();
+  };
+}
+
+async function loadRecentLogs() {
+  const d = await api('/api/logs/recent?n=50');
+  if (!d || !d.lines) return;
+  const out = $('log-output');
+  out.innerHTML = '';
+  d.lines.forEach(line => {
+    const div = document.createElement('div');
+    div.innerHTML = formatLogLine(line);
+    out.appendChild(div);
+  });
+  out.scrollTop = out.scrollHeight;
+
+  // Also populate home logs (last 8 lines)
+  const hLogs = $('home-logs');
+  hLogs.innerHTML = '';
+  d.lines.slice(-8).forEach(line => {
+    const div = document.createElement('div');
+    div.innerHTML = formatLogLine(line);
+    hLogs.appendChild(div);
+  });
+}
+
+function formatLogLine(line) {
+  // Try to parse and colorize log lines
+  // Format: timestamp ... LEVEL ... [name] message
+  let html = line.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+  // Timestamp
+  html = html.replace(/^(\S+ \S+)/, '<span class="t">$1</span>');
+
+  // Level
+  html = html.replace(/ (INFO) /g, ' <span class="i">$1 </span>');
+  html = html.replace(/ (WARNING|WARN) /g, ' <span class="w">$1</span> ');
+  html = html.replace(/ (ERROR) /g, ' <span class="e">$1</span> ');
+
+  // Logger name
+  html = html.replace(/\[([^\]]+)\]/g, '<span class="n">[$1]</span>');
+
+  return html;
+}
+
+// ─── Service control ────────────────────────────────────────
+// ─── Button labels by plugin ────────────────────────────────
+const BUTTON_ACTIONS = {
+  stocks:      { A: 'Prev plugin', B: 'Next plugin', C: 'Refresh data',    D: 'Next ticker group' },
+  weather:     { A: 'Prev plugin', B: 'Next plugin', C: 'Refresh data',    D: 'Toggle °C / °F' },
+  photo_frame: { A: 'Prev plugin', B: 'Next plugin', C: 'Previous photo',  D: 'Next photo' },
+  _default:    { A: 'Prev plugin', B: 'Next plugin', C: 'Refresh',         D: 'Info overlay' },
+};
+
+function updateButtonLabels(currentPlugin) {
+  const actions = BUTTON_ACTIONS[currentPlugin] || BUTTON_ACTIONS._default;
+  const pluginLabel = currentPlugin ? currentPlugin.toUpperCase().replace(/_/g, ' ') : '—';
+  const el = $('btn-panel-plugin');
+  if (el) el.textContent = pluginLabel;
+  ['a','b','c','d'].forEach(b => {
+    const el = $('btn-action-' + b);
+    if (el) el.textContent = actions[b.toUpperCase()] || '—';
+  });
+}
+
+async function serviceAction(action) {
+  toast(action + 'ing service…');
+  const r = await apiPost('/api/system/service', { action });
+  if (r && r.ok) {
+    toast('Service ' + action + 'ed');
+    setTimeout(pollStats, 2000);
+  } else {
+    toast('Failed: ' + ((r && r.error) || (r && r.stderr) || 'unknown'));
+  }
+}
+
+// ─── Page router ────────────────────────────────────────────
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-page]');
+  if (!t) return;
+  e.preventDefault();
+  const page = t.dataset.page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav a[data-page="' + page + '"]').forEach(a => a.classList.add('active'));
+  window.scrollTo({ top: 0 });
+
+  // Start/stop stats polling based on page
+  if (page === 'system') startStatsPoll();
+  else stopStatsPoll();
+
+  // Lazy load page data
+  if (page === 'photos') loadPhotos();
+  if (page === 'logs') { if (!_logSource) reconnectLogs(); else loadRecentLogs(); }
+  if (page === 'schedule') loadSchedule();
+  if (page === 'plugins') { loadPlugins(); hidePluginDetail(); }
+  if (page === 'display') loadDisplaySettings();
+  if (page === 'buttons') loadButtonSettings();
+});
+
+// Toggle clicks for settings
+document.addEventListener('click', e => {
+  const t = e.target.closest('.tog[data-setting]');
+  if (!t) return;
+  t.classList.toggle('off');
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  const map = { h: 'home', p: 'plugins', f: 'photos', s: 'schedule', d: 'display', b: 'buttons', y: 'system', l: 'logs' };
+  const page = map[e.key.toLowerCase()];
+  if (page) {
+    const link = document.querySelector('.nav a[data-page="' + page + '"]');
+    if (link) link.click();
+  }
+});
+
+// Initial loads
+loadRecentLogs();
+</script>
+</body>
+</html>
